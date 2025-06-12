@@ -1,0 +1,92 @@
+[
+  {
+    "id": 1,
+    "nama_barang": "Indomie Goreng",
+    "harga": 3000,
+    "lokasi": "Rak Mie Instan",
+    "deskripsi_suara_lokasi": "Ada di rak tengah, bagian mie instan.",
+    "path_qris": "/qris/indomie_goreng.png",
+    "stok": 50
+  },
+  {
+    "id": 2,
+    "nama_barang": "Aqua Botol 600ml",
+    "harga": 3500,
+    "lokasi": "Kulkas Minuman",
+    "deskripsi_suara_lokasi": "Di dalam kulkas minuman, sebelah kanan.",
+    "path_qris": "/qris/aqua_600ml.png",
+    "stok": 100
+  },
+  {
+    "id": 3,
+    "nama_barang": "Chitato Sapi Panggang",
+    "harga": 10000,
+    "lokasi": "Rak Snack",
+    "deskripsi_suara_lokasi": "Rak snack, di bagian atas.",
+    "path_qris": "/qris/chitato_sapi_panggang.png",
+    "stok": 30
+  },
+  {
+    "id": 4,
+    "nama_barang": "Susu Ultra Coklat 250ml",
+    "harga": 6000,
+    "lokasi": "Kulkas Susu",
+    "deskripsi_suara_lokasi": "Kulkas khusus produk susu, di baris kedua dari atas.",
+    "path_qris": "/qris/susu_ultra_coklat.png",
+    "stok": 45
+  },
+  {
+    "id": 5,
+    "nama_barang": "Roti Tawar Sari Roti",
+    "harga": 15000,
+    "lokasi": "Rak Roti",
+    "deskripsi_suara_lokasi": "Area roti, dekat kasir.",
+    "path_qris": "/qris/sari_roti_tawar.png",
+    "stok": 20
+  },
+  {
+    "id": 6,
+    "nama_barang": "Teh Botol Sosro Kotak",
+    "harga": 4000,
+    "lokasi": "Kulkas Minuman",
+    "deskripsi_suara_lokasi": "Kulkas minuman, di sebelah kiri bawah.",
+    "path_qris": "/qris/teh_botol_kotak.png",
+    "stok": 70
+  },
+  {
+    "id": 7,
+    "nama_barang": "Sabun Mandi Lifebuoy",
+    "harga": 5000,
+    "lokasi": "Rak Perlengkapan Mandi",
+    "deskripsi_suara_lokasi": "Bagian sabun dan sampo, rak nomor tiga.",
+    "path_qris": "/qris/lifebuoy_sabun.png",
+    "stok": 60
+  },
+  {
+    "id": 8,
+    "nama_barang": "Pasta Gigi Pepsodent",
+    "harga": 8500,
+    "lokasi": "Rak Perlengkapan Mandi",
+    "deskripsi_suara_lokasi": "Di rak perlengkapan mandi, dekat dengan sikat gigi.",
+    "path_qris": "/qris/pepsodent.png",
+    "stok": 35
+  },
+  {
+    "id": 9,
+    "nama_barang": "Minyak Goreng Bimoli 1L",
+    "harga": 25000,
+    "lokasi": "Rak Minyak & Sembako",
+    "deskripsi_suara_lokasi": "Rak sembako, di bagian minyak goreng.",
+    "path_qris": "/qris/bimoli_1l.png",
+    "stok": 25
+  },
+  {
+    "id": 10,
+    "nama_barang": "Kopi Kapal Api Special Mix",
+    "harga": 12000,
+    "lokasi": "Rak Kopi & Teh",
+    "deskripsi_suara_lokasi": "Area kopi, di rak paling atas.",
+    "path_qris": "/qris/kapal_api_special_mix.png",
+    "stok": 40
+  }
+]

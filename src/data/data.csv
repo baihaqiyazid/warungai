@@ -1,0 +1,9 @@
+id,nama_barang,harga,lokasi,deskripsi_suara_lokasi,path_qris,stok
+1,Lampu LED 10W Philips,25000,Rak 2 Baris Atas,"Lampu LED sepuluh watt merek Philips ada di rak nomor dua, baris paling atas ya.",qris_images/lampu_led_10w.png,10
+2,Kopi Sachet ABC Susu,1500,Rak 1 Baris Tengah,"Kopi sachet ABC Susu bisa kakak temukan di rak nomor satu, bagian tengah.",qris_images/kopi_abc_susu.png,10
+3,Mie Instan Indomie Goreng,3000,Rak 3 Baris Bawah,"Indomie Goreng ada di rak nomor tiga, di bagian bawah.",qris_images/indomie_goreng.png,10
+4,Air Mineral Botol 600ml,3500,Pendingin Kanan,Air mineral botol enam ratus mililiter ada di dalam kulkas pendingin sebelah kanan.,qris_images/air_mineral.png,10
+5,Sabun Mandi Lifebuoy,4000,Rak 4 Baris Atas,"Sabun mandi Lifebuoy ada di rak nomor empat, baris atas.",qris_images/sabun_lifebuoy.png,10
+6,Pasta Gigi Pepsodent,7500,Rak 4 Baris Tengah,"Pasta gigi Pepsodent terletak di rak nomor empat, bagian tengah.",qris_images/pasta_gigi_pepsodent.png,10
+7,Baterai AA Alkaline (isi 2),12000,Kasir Meja Depan,"Baterai AA Alkaline isi dua ada di dekat kasir, di meja depan.",qris_images/baterai_aa.png,10
+8,Teh Celup Sariwangi,6000,Rak 1 Baris Atas,"Teh celup Sariwangi ada di rak nomor satu, baris atas, dekat kopi.",qris_images/teh_sariwangi.png,10

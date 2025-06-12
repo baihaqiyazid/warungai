@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warung Mandiri AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overscroll-behavior-y: contain; /* Mencegah scroll berlebih di body pada mobile */
+        }
+        #chatbox {
+            scroll-behavior: smooth;
+            overscroll-behavior-y: contain;
+        }
+        .user-message {
+            background-color: #DCF8C6; /* Warna bubble chat pengguna */
+            align-self: flex-end;
+        }
+        .ai-message {
+            background-color: #E5E7EB; /* Warna bubble chat AI */
+            align-self: flex-start;
+        }
+        .message-bubble {
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        /* Animasi untuk loading mic */
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.7; }
+        }
+        .mic-listening {
+            animation: pulse 1.5s infinite;
+        }
+        #qrisModal {
+            background-color: rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="bg-white shadow-xl rounded-lg w-full max-w-lg flex flex-col" style="height: 90vh;">
+        <header class="bg-sky-600 text-white p-4 rounded-t-lg flex items-center justify-between">
+            <h1 class="text-xl font-semibold">Warung Mandiri AI</h1>
+            <div id="connection-status" class="w-3 h-3 bg-red-500 rounded-full" title="Koneksi ke Server"></div>
+        </header>
+
+        <div id="chatbox" class="flex-grow p-4 space-y-4 overflow-y-auto">
+            <div class="flex">
+                <div class="ai-message message-bubble">
+                    <p>Selamat datang di Warung Mandiri! Ada yang bisa saya bantu? Anda bisa bilang "Mau beli" untuk memulai.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="qrisModal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+            <div class="bg-white p-6 rounded-lg shadow-xl max-w-sm w-full mx-4">
+                <h3 class="text-lg font-semibold mb-4 text-center">Scan untuk Pembayaran</h3>
+                <img id="qrisImage" src="" alt="QRIS Pembayaran" class="w-full h-auto object-contain rounded-md mb-4" style="max-height: 300px;">
+                <p id="qrisMessage" class="text-center text-sm text-gray-700 mb-4"></p>
+                <button id="closeQrisModal" class="w-full bg-sky-500 text-white py-2 px-4 rounded-lg hover:bg-sky-600 transition duration-150">Tutup</button>
+            </div>
+        </div>
+        
+        <footer class="bg-gray-50 p-4 border-t border-gray-200 rounded-b-lg">
+            <div class="flex items-center space-x-2">
+                <input type="text" id="userInput" class="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-transparent outline-none" placeholder="Ketik atau ucapkan pesan..." disabled>
+                <button id="sendButton" class="bg-sky-500 text-white p-3 rounded-lg hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                    </svg>
+                </button>
+                <button id="micButton" class="bg-red-500 text-white p-3 rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15c-2.21 0-4-1.79-4-4V5a4 4 0 018 0v6c0 2.21-1.79 4-4 4z" />
+                    </svg>
+                </button>
+            </div>
+            <p id="sttStatus" class="text-xs text-gray-500 mt-1 text-center"></p>
+        </footer>
+    </div>
+
+    <script>
+        const chatbox = document.getElementById('chatbox');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        const micButton = document.getElementById('micButton');
+        const sttStatus = document.getElementById('sttStatus');
+        const connectionStatusDiv = document.getElementById('connection-status');
+        
+        const qrisModal = document.getElementById('qrisModal');
+        const qrisImage = document.getElementById('qrisImage');
+        const qrisMessage = document.getElementById('qrisMessage');
+        const closeQrisModalButton = document.getElementById('closeQrisModal');
+
+        let sessionId = localStorage.getItem('warungAiSessionId') || null;
+        let isListening = false;
+        let recognition;
+
+        const API_URL = '/chat'; // Sesuaikan jika backend berjalan di port/host berbeda
+
+        // --- Cek Koneksi Awal ---
+        async function checkServerConnection() {
+            try {
+                // Coba fetch endpoint root atau endpoint health check jika ada
+                const response = await fetch(window.location.origin, { method: 'HEAD', mode: 'no-cors' });
+                // no-cors tidak bisa baca status, tapi error menandakan masalah
+                // Cara lebih baik: buat endpoint /health di backend
+                connectionStatusDiv.classList.remove('bg-red-500');
+                connectionStatusDiv.classList.add('bg-green-500');
+                connectionStatusDiv.title = "Terhubung ke Server";
+                userInput.disabled = false;
+                sendButton.disabled = false;
+            } catch (error) {
+                connectionStatusDiv.classList.remove('bg-green-500');
+                connectionStatusDiv.classList.add('bg-red-500');
+                connectionStatusDiv.title = "Gagal Terhubung ke Server";
+                addMessageToChatbox("Gagal terhubung ke server. Silakan coba refresh halaman.", 'ai', true);
+                userInput.disabled = true;
+                sendButton.disabled = true;
+            }
+        }
+        checkServerConnection();
+
+
+        // --- Speech-to-Text (STT) ---
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = false; // Hanya satu kali pengenalan per klik
+            recognition.lang = 'id-ID'; // Bahasa Indonesia
+            recognition.interimResults = false; // Hanya hasil final
+
+            recognition.onstart = () => {
+                isListening = true;
+                micButton.classList.add('mic-listening', 'bg-orange-500');
+                micButton.classList.remove('bg-red-500');
+                sttStatus.textContent = 'Mendengarkan...';
+                userInput.placeholder = "Sedang mendengarkan...";
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                userInput.value = transcript;
+                sttStatus.textContent = 'Ucapan dikenali. Klik kirim atau mic lagi.';
+                // Otomatis kirim setelah STT? Bisa ditambahkan jika mau.
+                // sendMessage(); 
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                sttStatus.textContent = `Error STT: ${event.error}. Coba lagi.`;
+                if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                    sttStatus.textContent = "Akses mikrofon ditolak. Izinkan di pengaturan browser.";
+                }
+            };
+
+            recognition.onend = () => {
+                isListening = false;
+                micButton.classList.remove('mic-listening', 'bg-orange-500');
+                micButton.classList.add('bg-red-500');
+                sttStatus.textContent = '';
+                userInput.placeholder = "Ketik atau ucapkan pesan...";
+            };
+        } else {
+            sttStatus.textContent = 'Speech Recognition tidak didukung browser ini.';
+            micButton.disabled = true;
+            micButton.classList.add('opacity-50', 'cursor-not-allowed');
+        }
+
+        micButton.addEventListener('click', () => {
+            if (recognition) {
+                if (isListening) {
+                    recognition.stop();
+                } else {
+                    try {
+                        recognition.start();
+                    } catch (e) {
+                        // Tangani error jika start dipanggil terlalu cepat setelah stop
+                        console.warn("Gagal memulai STT, mungkin sedang dalam proses stop:", e);
+                        sttStatus.textContent = "Gagal memulai mic, coba sesaat lagi.";
+                    }
+                }
+            }
+        });
+
+        // --- Text-to-Speech (TTS) ---
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'id-ID'; // Bahasa Indonesia
+                // Pilih suara jika tersedia (opsional)
+                const voices = speechSynthesis.getVoices();
+                let indonesianVoice = voices.find(voice => voice.lang === 'id-ID');
+                if (indonesianVoice) {
+                    utterance.voice = indonesianVoice;
+                }
+                speechSynthesis.speak(utterance);
+            } else {
+                console.warn('Speech Synthesis tidak didukung browser ini.');
+            }
+        }
+        // Memuat suara (beberapa browser butuh ini)
+        if ('speechSynthesis' in window && speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = () => {speechSynthesis.getVoices();};
+        }
+
+
+        // --- Fungsi Chat ---
+        function addMessageToChatbox(message, sender, isError = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('flex');
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.classList.add('message-bubble');
+            
+            if (sender === 'user') {
+                bubbleDiv.classList.add('user-message');
+                messageDiv.classList.add('justify-end');
+            } else { // ai
+                bubbleDiv.classList.add('ai-message');
+                if (isError) {
+                    bubbleDiv.classList.add('bg-red-200', 'text-red-800');
+                }
+            }
+            
+            // Sanitasi dasar untuk mencegah XSS jika pesan mengandung HTML (meskipun dari AI sendiri)
+            // Cara lebih aman adalah menggunakan textContent atau DOMPurify jika input bisa dari sumber tidak terpercaya
+            const p = document.createElement('p');
+            p.textContent = message; // Menggunakan textContent lebih aman
+            bubbleDiv.appendChild(p);
+            
+            messageDiv.appendChild(bubbleDiv);
+            chatbox.appendChild(messageDiv);
+            chatbox.scrollTop = chatbox.scrollHeight; // Auto-scroll ke bawah
+        }
+
+        async function sendMessage() {
+            const messageText = userInput.value.trim();
+            if (!messageText) return;
+
+            addMessageToChatbox(messageText, 'user');
+            userInput.value = '';
+            userInput.disabled = true;
+            sendButton.disabled = true;
+            micButton.disabled = true;
+            
+            // Tampilkan indikator loading AI
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.classList.add('flex');
+            const thinkingBubble = document.createElement('div');
+            thinkingBubble.classList.add('ai-message', 'message-bubble');
+            thinkingBubble.innerHTML = '<p class="italic">AI sedang berpikir...</p>';
+            thinkingDiv.appendChild(thinkingBubble);
+            chatbox.appendChild(thinkingDiv);
+            chatbox.scrollTop = chatbox.scrollHeight;
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: messageText, session_id: sessionId }),
+                });
+
+                chatbox.removeChild(thinkingDiv); // Hapus indikator loading
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({detail: "Gagal memproses permintaan."}));
+                    throw new Error(errorData.detail || `Server error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                addMessageToChatbox(data.reply, 'ai');
+                speak(data.reply); // AI berbicara
+
+                if (data.session_id) {
+                    sessionId = data.session_id;
+                    localStorage.setItem('warungAiSessionId', sessionId);
+                }
+
+                if (data.qris_url) {
+                    qrisImage.src = data.qris_url; // URL sudah termasuk /qris_images/
+                    qrisImage.onerror = () => { // Fallback jika gambar gagal dimuat
+                        qrisImage.src = '/qris_images/default.png'; // Gambar default jika ada error
+                        qrisMessage.textContent = "Gagal memuat gambar QRIS. Silakan coba lagi.";
+                    };
+                    qrisMessage.textContent = data.reply; // Pesan yang menyertai QRIS
+                    qrisModal.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                console.error('Error sending message:', error);
+                chatbox.removeChild(thinkingDiv); // Hapus indikator loading jika masih ada
+                addMessageToChatbox(`Error: ${error.message}`, 'ai', true);
+                speak(`Terjadi kesalahan: ${error.message}`);
+            } finally {
+                userInput.disabled = false;
+                sendButton.disabled = false;
+                if (recognition) micButton.disabled = false;
+                userInput.focus();
+            }
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        closeQrisModalButton.addEventListener('click', () => {
+            qrisModal.classList.add('hidden');
+            // Mungkin kirim pesan konfirmasi ke AI bahwa QRIS ditutup?
+            // userInput.value = "Saya sudah melihat QRIS";
+            // sendMessage();
+        });
+
+        // Pesan selamat datang awal dari AI (jika tidak ada di HTML statis)
+        // speak("Selamat datang di Warung Mandiri! Ada yang bisa saya bantu?");
+
+    </script>
+</body>
+</html>
